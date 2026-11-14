@@ -1,0 +1,6 @@
+{
+  "expected_version": 1,
+  "readings": [
+    {"reading_no": "R9999", "humidity": "50.0", "sampled_at": "2026-11-01T12:00:00Z"}
+  ]
+}

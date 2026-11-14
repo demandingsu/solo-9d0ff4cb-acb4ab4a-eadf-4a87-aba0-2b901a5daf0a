@@ -1,0 +1,367 @@
+
+========================================================================
+1. 创建田块
+========================================================================
+[create_field] HTTP 200
+{'id': 1, 'code': 'DEMO-81276', 'name': '演示田块', 'created_at': '2026-11-14T22:35:14.873574Z'}
+
+========================================================================
+2. 批量上传：30.0 -> 62.5（突跳）-> 63.0
+========================================================================
+[upload] HTTP 200
+{'field_id': 1,
+ 'version_before': 1,
+ 'version_after': 2,
+ 'applied': [{'id': 1,
+              'reading_no': 'R1',
+              'revision': 1,
+              'humidity': '30.00',
+              'sampled_at': '2026-11-01T08:00:00Z',
+              'received_at': '2026-11-14T22:35:14.891621Z',
+              'is_active': True,
+              'is_void': False,
+              'is_late': False,
+              'change_type': 'upload',
+              'note': None,
+              'supersedes_id': None},
+             {'id': 2,
+              'reading_no': 'R2',
+              'revision': 1,
+              'humidity': '62.50',
+              'sampled_at': '2026-11-01T09:00:00Z',
+              'received_at': '2026-11-14T22:35:14.893130Z',
+              'is_active': True,
+              'is_void': False,
+              'is_late': False,
+              'change_type': 'upload',
+              'note': None,
+              'supersedes_id': None},
+             {'id': 3,
+              'reading_no': 'R3',
+              'revision': 1,
+              'humidity': '63.00',
+              'sampled_at': '2026-11-01T10:00:00Z',
+              'received_at': '2026-11-14T22:35:14.894241Z',
+              'is_active': True,
+              'is_void': False,
+              'is_late': False,
+              'change_type': 'upload',
+              'note': None,
+              'supersedes_id': None}],
+ 'invalidated_conclusions': []}
+
+========================================================================
+3. 复核查询（阈值 10）：R1-R2 差值 32.5 超阈值，返回读数号/修订号/差值
+========================================================================
+[review] HTTP 200
+{'field_id': 1,
+ 'field_code': 'DEMO-81276',
+ 'threshold': '10',
+ 'snapshot_version': 2,
+ 'pairs': [{'reading_no_a': 'R1',
+            'revision_a': 1,
+            'reading_no_b': 'R2',
+            'revision_b': 1,
+            'sampled_at_a': '2026-11-01T08:00:00',
+            'sampled_at_b': '2026-11-01T09:00:00',
+            'humidity_a': '30.00',
+            'humidity_b': '62.50',
+            'humidity_diff': '32.50',
+            'conclusion_status': 'exceeds_threshold',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None}],
+ 'pending_times': []}
+
+========================================================================
+4. 同一采样时刻再传两条 -> 标记 pending_check，不任意配对
+========================================================================
+[review_with_pending] HTTP 200
+{'field_id': 1,
+ 'field_code': 'DEMO-81276',
+ 'threshold': '10',
+ 'snapshot_version': 3,
+ 'pairs': [{'reading_no_a': 'R1',
+            'revision_a': 1,
+            'reading_no_b': 'R2',
+            'revision_b': 1,
+            'sampled_at_a': '2026-11-01T08:00:00',
+            'sampled_at_b': '2026-11-01T09:00:00',
+            'humidity_a': '30.00',
+            'humidity_b': '62.50',
+            'humidity_diff': '32.50',
+            'conclusion_status': 'exceeds_threshold',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None},
+           {'reading_no_a': 'R4',
+            'revision_a': 1,
+            'reading_no_b': '',
+            'revision_b': 0,
+            'sampled_at_a': '2026-11-01T11:00:00',
+            'sampled_at_b': '2026-11-01T11:00:00',
+            'humidity_a': '35.00',
+            'humidity_b': '0',
+            'humidity_diff': '0',
+            'conclusion_status': 'pending_check',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None},
+           {'reading_no_a': 'R5',
+            'revision_a': 1,
+            'reading_no_b': '',
+            'revision_b': 0,
+            'sampled_at_a': '2026-11-01T11:00:00',
+            'sampled_at_b': '2026-11-01T11:00:00',
+            'humidity_a': '78.00',
+            'humidity_b': '0',
+            'humidity_diff': '0',
+            'conclusion_status': 'pending_check',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None}],
+ 'pending_times': ['2026-11-01T11:00:00']}
+
+========================================================================
+5. 质控员确认 R1-R2 突跳（依据所见 snapshot 版本）
+========================================================================
+[confirm] HTTP 200
+{'conclusion_id': 1,
+ 'field_id': 1,
+ 'reading_no_a': 'R1',
+ 'reading_no_b': 'R2',
+ 'revision_a': 1,
+ 'revision_b': 1,
+ 'humidity_diff': '32.50',
+ 'threshold': '10',
+ 'decision': 'confirmed',
+ 'reason': '确认传感器异常',
+ 'reviewer': 'qc-zhang',
+ 'base_version': 3,
+ 'is_effective': True,
+ 'invalidate_reason': None,
+ 'created_at': '2026-11-14T22:35:14.928801Z'}
+
+========================================================================
+6. 过期提交：仍用旧 base_version 下相反结论 -> 409，原结论不改写
+========================================================================
+[stale_decision] HTTP 409
+{'detail': '提交基于过期版本 3，当前版本为 4，请重新获取快照后再提交', 'submitted_version': 3, 'current_version': 4}
+
+========================================================================
+7. 勘误 R2 为 31.5：旧结论失效但保留；突跳消失
+========================================================================
+[correction] HTTP 200
+{'field_id': 1,
+ 'version_before': 4,
+ 'version_after': 5,
+ 'applied': [{'id': 6,
+              'reading_no': 'R2',
+              'revision': 2,
+              'humidity': '31.50',
+              'sampled_at': '2026-11-01T09:00:00Z',
+              'received_at': '2026-11-14T22:35:14.939301Z',
+              'is_active': True,
+              'is_void': False,
+              'is_late': False,
+              'change_type': 'correction',
+              'note': '探头接线松动',
+              'supersedes_id': 2}],
+ 'invalidated_conclusions': [1]}
+[review_after_correction] HTTP 200
+{'field_id': 1,
+ 'field_code': 'DEMO-81276',
+ 'threshold': '10',
+ 'snapshot_version': 5,
+ 'pairs': [{'reading_no_a': 'R2',
+            'revision_a': 2,
+            'reading_no_b': 'R3',
+            'revision_b': 1,
+            'sampled_at_a': '2026-11-01T09:00:00',
+            'sampled_at_b': '2026-11-01T10:00:00',
+            'humidity_a': '31.50',
+            'humidity_b': '63.00',
+            'humidity_diff': '31.50',
+            'conclusion_status': 'exceeds_threshold',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None},
+           {'reading_no_a': 'R4',
+            'revision_a': 1,
+            'reading_no_b': '',
+            'revision_b': 0,
+            'sampled_at_a': '2026-11-01T11:00:00',
+            'sampled_at_b': '2026-11-01T11:00:00',
+            'humidity_a': '35.00',
+            'humidity_b': '0',
+            'humidity_diff': '0',
+            'conclusion_status': 'pending_check',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None},
+           {'reading_no_a': 'R5',
+            'revision_a': 1,
+            'reading_no_b': '',
+            'revision_b': 0,
+            'sampled_at_a': '2026-11-01T11:00:00',
+            'sampled_at_b': '2026-11-01T11:00:00',
+            'humidity_a': '78.00',
+            'humidity_b': '0',
+            'humidity_diff': '0',
+            'conclusion_status': 'pending_check',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None}],
+ 'pending_times': ['2026-11-01T11:00:00']}
+
+========================================================================
+8. 结论追溯：旧结论仍在，但 is_effective=false
+========================================================================
+[conclusions_audit] HTTP 200
+[{'conclusion_id': 1,
+  'field_id': 1,
+  'reading_no_a': 'R1',
+  'reading_no_b': 'R2',
+  'revision_a': 1,
+  'revision_b': 1,
+  'humidity_diff': '32.50',
+  'threshold': '10.00',
+  'decision': 'confirmed',
+  'reason': '确认传感器异常',
+  'reviewer': 'qc-zhang',
+  'base_version': 3,
+  'is_effective': False,
+  'invalidate_reason': 'superseded_by_upload',
+  'created_at': '2026-11-14T22:35:14.928801'}]
+
+========================================================================
+9. 作废 R3 + 迟到读数 R6 插入 08:30 改变相邻关系
+========================================================================
+[late_arrival] HTTP 200
+{'field_id': 1,
+ 'version_before': 6,
+ 'version_after': 7,
+ 'applied': [{'id': 7,
+              'reading_no': 'R6',
+              'revision': 1,
+              'humidity': '95.00',
+              'sampled_at': '2026-11-01T08:30:00Z',
+              'received_at': '2026-11-14T22:35:14.965095Z',
+              'is_active': True,
+              'is_void': False,
+              'is_late': True,
+              'change_type': 'late',
+              'note': None,
+              'supersedes_id': None}],
+ 'invalidated_conclusions': []}
+[review_final] HTTP 200
+{'field_id': 1,
+ 'field_code': 'DEMO-81276',
+ 'threshold': '10',
+ 'snapshot_version': 7,
+ 'pairs': [{'reading_no_a': 'R1',
+            'revision_a': 1,
+            'reading_no_b': 'R6',
+            'revision_b': 1,
+            'sampled_at_a': '2026-11-01T08:00:00',
+            'sampled_at_b': '2026-11-01T08:30:00',
+            'humidity_a': '30.00',
+            'humidity_b': '95.00',
+            'humidity_diff': '65.00',
+            'conclusion_status': 'exceeds_threshold',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None},
+           {'reading_no_a': 'R6',
+            'revision_a': 1,
+            'reading_no_b': 'R2',
+            'revision_b': 2,
+            'sampled_at_a': '2026-11-01T08:30:00',
+            'sampled_at_b': '2026-11-01T09:00:00',
+            'humidity_a': '95.00',
+            'humidity_b': '31.50',
+            'humidity_diff': '63.50',
+            'conclusion_status': 'exceeds_threshold',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None},
+           {'reading_no_a': 'R4',
+            'revision_a': 1,
+            'reading_no_b': '',
+            'revision_b': 0,
+            'sampled_at_a': '2026-11-01T11:00:00',
+            'sampled_at_b': '2026-11-01T11:00:00',
+            'humidity_a': '35.00',
+            'humidity_b': '0',
+            'humidity_diff': '0',
+            'conclusion_status': 'pending_check',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None},
+           {'reading_no_a': 'R5',
+            'revision_a': 1,
+            'reading_no_b': '',
+            'revision_b': 0,
+            'sampled_at_a': '2026-11-01T11:00:00',
+            'sampled_at_b': '2026-11-01T11:00:00',
+            'humidity_a': '78.00',
+            'humidity_b': '0',
+            'humidity_diff': '0',
+            'conclusion_status': 'pending_check',
+            'decision': None,
+            'conclusion_id': None,
+            'decided_by': None,
+            'decided_at': None,
+            'decided_revision_a': None,
+            'decided_revision_b': None}],
+ 'pending_times': ['2026-11-01T11:00:00']}
+
+========================================================================
+10. 历史回放（事件流按 seq 顺序）
+========================================================================
+[replay] HTTP 200
+[{'seq': 1, 'event_type': 'field_created', 'version': 1},
+ {'seq': 2, 'event_type': 'upload_batch', 'version': 2},
+ {'seq': 3, 'event_type': 'upload_batch', 'version': 3},
+ {'seq': 4, 'event_type': 'review_decision', 'version': 4},
+ {'seq': 5, 'event_type': 'upload_batch', 'version': 5},
+ {'seq': 6, 'event_type': 'upload_batch', 'version': 6},
+ {'seq': 7, 'event_type': 'upload_batch', 'version': 7}]
+
+========================================================================
+11. 过期上传（expected_version=1）-> 409
+========================================================================
+[stale_upload] HTTP 409
+{'detail': '提交基于过期版本 1，当前版本为 7，请重新获取快照后再提交', 'submitted_version': 1, 'current_version': 7}
+
+全部演示步骤通过 ✔

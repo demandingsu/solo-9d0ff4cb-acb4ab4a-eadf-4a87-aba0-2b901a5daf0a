@@ -1,0 +1,9 @@
+{
+  "reading_no_a": "R1001",
+  "reading_no_b": "R1002",
+  "decision": "confirmed",
+  "reason": "差值 32.5 超阈值 10，判定为传感器异常而非真实墒情变化",
+  "reviewer": "qc-zhang",
+  "threshold": "10",
+  "base_version": 2
+}

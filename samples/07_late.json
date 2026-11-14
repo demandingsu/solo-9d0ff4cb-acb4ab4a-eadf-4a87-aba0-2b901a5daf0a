@@ -1,0 +1,11 @@
+{
+  "readings": [
+    {
+      "reading_no": "R1006",
+      "humidity": "30.5",
+      "sampled_at": "2026-11-01T08:30:00Z",
+      "change_type": "late",
+      "note": "网关掉线补传，采样时刻落在 R1001 与 R1002 之间"
+    }
+  ]
+}

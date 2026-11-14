@@ -1,0 +1,11 @@
+{
+  "readings": [
+    {
+      "reading_no": "R1002",
+      "humidity": "31.5",
+      "sampled_at": "2026-11-01T09:00:00Z",
+      "change_type": "correction",
+      "note": "勘误：探头接线松动，真实湿度 31.5"
+    }
+  ]
+}

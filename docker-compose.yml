@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: moisture
+      POSTGRES_PASSWORD: moisture
+      POSTGRES_DB: moisture_qc
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moisture -d moisture_qc"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Two application instances sharing the SAME database, as required. Both
+  # are fronted by round-robin; upload/review concurrency is resolved by
+  # advisory locks + optimistic field versions (stale -> HTTP 409).
+  api-1:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg2://moisture:moisture@db:5432/moisture_qc
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8001:8000"
+
+  api-2:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg2://moisture:moisture@db:5432/moisture_qc
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8002:8000"
+
+volumes:
+  pgdata:

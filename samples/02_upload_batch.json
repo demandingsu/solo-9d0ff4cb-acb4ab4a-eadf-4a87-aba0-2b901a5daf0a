@@ -1,0 +1,7 @@
+{
+  "readings": [
+    {"reading_no": "R1001", "humidity": "30.0", "sampled_at": "2026-11-01T08:00:00Z"},
+    {"reading_no": "R1002", "humidity": "62.5", "sampled_at": "2026-11-01T09:00:00Z"},
+    {"reading_no": "R1003", "humidity": "63.0", "sampled_at": "2026-11-01T10:00:00Z"}
+  ]
+}

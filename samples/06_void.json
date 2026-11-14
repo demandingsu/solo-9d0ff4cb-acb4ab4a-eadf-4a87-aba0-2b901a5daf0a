@@ -1,0 +1,11 @@
+{
+  "readings": [
+    {
+      "reading_no": "R1003",
+      "humidity": "63.0",
+      "sampled_at": "2026-11-01T10:00:00Z",
+      "change_type": "void",
+      "note": "该时段设备标定失败，整段作废"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+# 田间湿度质控平台 — 接口调用样例
+# 可直接用 IntelliJ HTTP Client / VS Code REST Client 执行，
+# 或把 @ 引用替换为 samples/ 下的 JSON 用 curl 发送。
+
+### 1. 建田块
+POST http://localhost:8001/api/v1/fields
+Content-Type: application/json
+
+< ./samples/01_create_field.json
+
+### 2. 批量上传读数（首次上传）
+POST http://localhost:8001/api/v1/fields/1/readings/batch
+Content-Type: application/json
+
+< ./samples/02_upload_batch.json
+
+### 3. 复核查询：阈值 10，返回突跳读数对 + 快照版本号
+GET http://localhost:8001/api/v1/fields/1/review?threshold=10
+
+### 4. 同一时刻多条读数（待核场景）
+POST http://localhost:8001/api/v1/fields/1/readings/batch
+Content-Type: application/json
+
+< ./samples/03_same_time_pending.json
+
+### 5. 复核查询（待核标记 pending_check，不任意配对）
+GET http://localhost:8001/api/v1/fields/1/review?threshold=10
+
+### 6. 质控员确认突跳（base_version 取自第 3 步的 snapshot_version）
+POST http://localhost:8001/api/v1/fields/1/review/decisions
+Content-Type: application/json
+
+< ./samples/04_decision_confirm.json
+
+### 7. 勘误：修订 R2 数值，旧结论自动失效但保留追溯
+POST http://localhost:8001/api/v1/fields/1/readings/batch
+Content-Type: application/json
+
+< ./samples/05_correction.json
+
+### 8. 作废读数
+POST http://localhost:8001/api/v1/fields/1/readings/batch
+Content-Type: application/json
+
+< ./samples/06_void.json
+
+### 9. 迟到读数（插入到历史采样时刻之间，改变相邻关系）
+POST http://localhost:8001/api/v1/fields/1/readings/batch
+Content-Type: application/json
+
+< ./samples/07_late.json
+
+### 10. 结论追溯（含已失效的历史结论）
+GET http://localhost:8001/api/v1/fields/1/review/conclusions?include_inactive=true
+
+### 11. 读数全量历史（含旧修订号、作废行）
+GET http://localhost:8001/api/v1/fields/1/readings
+
+### 12. 历史回放
+GET http://localhost:8001/api/v1/events?field_id=1
+
+### 13. 过期提交（expected_version 落后 -> 409，不改写原结论）
+POST http://localhost:8001/api/v1/fields/1/readings/batch
+Content-Type: application/json
+
+< ./samples/08_stale_upload.json
